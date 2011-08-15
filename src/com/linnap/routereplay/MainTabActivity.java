@@ -7,6 +7,9 @@ import android.os.Bundle;
 import android.widget.TabHost;
 
 public class MainTabActivity extends TabActivity {
+	
+	public static final String TAG = "RouteReplay";
+	
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.main);
