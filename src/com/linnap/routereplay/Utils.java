@@ -1,5 +1,6 @@
 package com.linnap.routereplay;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -12,7 +13,13 @@ import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
 
 public class Utils {
+	
+	public static final String TAG = "RouteReplay";
+	
+	public static final File DATA_DIR = new File("/sdcard/replays");
+	
 	public static SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss.SSS");
+	public static SimpleDateFormat timestampFriendlyFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	// This returns time string in the current Locale, including DST!
 	// android_time is always UTC.
@@ -23,6 +30,15 @@ public class Utils {
 	
 	public static String currentTimestampString() {
 		return timestampString(System.currentTimeMillis());
+	}
+	
+	public static String timestampFriendlyString(long android_time) {
+		Date date = new Date(android_time);
+		return timestampFriendlyFormat.format(date);
+	}
+	
+	public static String currentTimestampFriendlyString() {
+		return timestampFriendlyString(System.currentTimeMillis());
 	}
 	
 	public static int airplaneMode(Context context) {

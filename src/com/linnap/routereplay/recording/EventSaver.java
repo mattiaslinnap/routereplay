@@ -10,12 +10,11 @@ import org.json.JSONObject;
 
 import android.util.Log;
 
-import com.linnap.routereplay.MainTabActivity;
 import com.linnap.routereplay.Utils;
 
 public class EventSaver {
 
-	private static final String TAG = MainTabActivity.TAG;
+	private static final String TAG = Utils.TAG;
 	
 	private String prefix;
 	private String phoneId;

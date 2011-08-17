@@ -3,17 +3,22 @@
       package="com.linnap.routereplay"
       android:versionCode="1"
       android:versionName="1.0">
-    <uses-sdk android:minSdkVersion="10" />
+    <uses-sdk android:minSdkVersion="8" />
 
     <application android:icon="@drawable/icon" android:label="RouteReplay">
-        <activity android:name=".MainTabActivity" android:label="MainTabActivity" android:theme="@android:style/Theme.NoTitleBar">
+        <activity android:name=".ChooseReplayActivity" android:label="RouteReplay">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         
-        <activity android:name=".RecordActivity" android:label="Record"></activity>
-        <activity android:name=".ReplayActivity" android:label="Replay"></activity>
+        <activity android:name=".ReplayInfoActivity" android:label="Replay Info" />
+        
+        <receiver android:name=".recording.AlarmReceiver"></receiver>
     </application>
+    
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 </manifest>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+			  android:layout_width="fill_parent"
+			  android:layout_height="fill_parent"
+			  android:orientation="vertical">
+
+	<TextView android:id="@+id/replay_name" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="Name" />
+	<TextView android:id="@+id/replay_length" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="Length" />
+	
+	<TextView android:id="@+id/replay_original_start" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="Original Start" android:layout_marginTop="50dp" />
+	<TextView android:id="@+id/current_time" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="Current Time" />
+	
+	<LinearLayout android:layout_width="fill_parent" android:layout_height="wrap_content"
+	              android:orientation="horizontal"
+	              android:layout_marginTop="50dp">	
+		<Button android:id="@+id/start_replay" android:text="Replay GPS Trace" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+		<Button android:id="@+id/start_schedule" android:text="Capture Schedule" android:layout_width="wrap_content" android:layout_height="wrap_content" />	
+	</LinearLayout>
+
+</LinearLayout>

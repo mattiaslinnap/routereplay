@@ -4,27 +4,48 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.Context;
 import android.location.GpsSatellite;
 import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
-import com.linnap.routereplay.MainTabActivity;
 import com.linnap.routereplay.Utils;
 
 public class GpsListener implements LocationListener, GpsStatus.Listener {
 
-	public static final String TAG = MainTabActivity.TAG;
+	public static final String TAG = Utils.TAG;
+	public static final long GPS_DELAY_MILLIS = 1000;
+	public static final float GPS_DISTANCE_METERS = 0.0f;
 	
 	private EventSaver saver;
 	private LocationManager locationManager;
+	private WakeLock wakeLock;
 	
-	public GpsListener() {
+	public GpsListener(EventSaver saver, Context context) {
+		this.saver = saver;
+		this.locationManager = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
+		this.wakeLock = ((PowerManager)context.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
+		this.wakeLock.setReferenceCounted(false);
 	}
 	
+	public void resume() {
+		wakeLock.acquire();
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, GPS_DELAY_MILLIS, GPS_DISTANCE_METERS, this);
+		locationManager.addGpsStatusListener(this);
+	}
+	
+	public void pause() {
+		locationManager.removeUpdates(this);
+		locationManager.removeGpsStatusListener(this);
+		wakeLock.release();
+	}
+		
 	@Override
 	public void onLocationChanged(Location location) {
 		if (location != null) {
