@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.util.List;
 
+import com.google.android.maps.GeoPoint;
 import com.google.customgson.Gson;
 import com.google.customgson.JsonParseException;
 import com.linnap.routereplay.Utils;
@@ -25,10 +26,10 @@ public class Loader {
 			Reader reader = new BufferedReader(new FileReader(new File(new File(Utils.DATA_DIR, replayName), "replay.json")));		
 			Gson gson = new Gson();
 			Replay replay = gson.fromJson(reader, Replay.class);
-			replay.name = replayName;
 			String error = validationError(replay);
 			if (error != null)
 				throw new LoaderException("Replay error: " + error);
+			fillTransientFields(replay, replayName);
 			return replay;
 		} catch (FileNotFoundException e) {
 			throw new LoaderException("File not found");
@@ -74,5 +75,13 @@ public class Loader {
 		}
 		
 		return null;
+	}
+	
+	private static void fillTransientFields(Replay replay, String replayName) {
+		replay.name = replayName;
+		
+		for (Fix f : replay.fullgps) {
+			f.geoPoint = Utils.geopoint(f.lat, f.lng);
+		}
 	}
 }

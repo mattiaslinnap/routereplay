@@ -1,8 +1,12 @@
 package com.linnap.routereplay;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,19 +36,23 @@ public class ReplayInfoActivity extends Activity {
 	private void attachUiEvents() {
 		Replay r = ChooseReplayActivity.getReplay();
 		if (r == null) {
-			Toast.makeText(this, "ERROR: replay is null", Toast.LENGTH_LONG);
+			Toast.makeText(this, "ERROR: replay is null", Toast.LENGTH_LONG).show();
 		}
 		((TextView)findViewById(R.id.replay_name)).setText(r.name);
-		((TextView)findViewById(R.id.replay_length)).setText(formatDeltaMillisAsTime(r.durationMillis()));
+		((TextView)findViewById(R.id.replay_length)).setText(Utils.formatDeltaMillisAsTime(r.durationMillis()));
 		((TextView)findViewById(R.id.replay_original_start)).setText("Original start: " + Utils.timestampFriendlyString(r.startMillis()));
-	}
-	
-	private String formatDeltaMillisAsTime(long millis) {
-		long seconds = (millis / 1000) % 60;
-		long minutes = (millis / 60000) % 60;
-		long hours = (millis / 3600000);
 		
-		return String.format("%d h %02d min %02d sec", hours, minutes, seconds);
+		((Button)findViewById(R.id.start_replay)).setOnClickListener(new OnClickListener() {
+			public void onClick(View view) {
+				Intent intent = new Intent(ReplayInfoActivity.this, ReplayMapMovementActivity.class);
+				startActivity(intent);
+			}
+		});
+		((Button)findViewById(R.id.start_schedule)).setOnClickListener(new OnClickListener() {
+			public void onClick(View view) {
+				Toast.makeText(ReplayInfoActivity.this, "TODO", Toast.LENGTH_SHORT).show();
+			}
+		});
 	}
 	
 	Runnable updateCurrentTime = new Runnable() {

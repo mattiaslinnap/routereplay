@@ -14,11 +14,15 @@
         </activity>
         
         <activity android:name=".ReplayInfoActivity" android:label="Replay Info" />
+        <activity android:name=".ReplayMapMovementActivity" android:label="GPS Trace Replay" />
         
-        <receiver android:name=".recording.AlarmReceiver"></receiver>
+        <receiver android:name=".oldrecording.AlarmReceiver"></receiver>
+        
+        <uses-library android:name="com.google.android.maps" />
     </application>
     
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 </manifest>

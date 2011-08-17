@@ -12,6 +12,8 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
 
+import com.google.android.maps.GeoPoint;
+
 public class Utils {
 	
 	public static final String TAG = "RouteReplay";
@@ -41,6 +43,17 @@ public class Utils {
 		return timestampFriendlyString(System.currentTimeMillis());
 	}
 	
+	public static String formatDeltaMillisAsTime(long millis) {
+		long seconds = (millis / 1000) % 60;
+		long minutes = (millis / 60000) % 60;
+		long hours = (millis / 3600000);
+		
+		if (hours > 0)
+			return String.format("%d h %02d min %02d sec", hours, minutes, seconds);
+		else
+			return String.format("%02d min %02d sec", minutes, seconds);
+	}
+	
 	public static int airplaneMode(Context context) {
 		try {
 			return Settings.System.getInt(context.getContentResolver(), Settings.System.AIRPLANE_MODE_ON);
@@ -59,5 +72,9 @@ public class Utils {
 			}
 			return json;
 		}
+	}
+	
+	public static GeoPoint geopoint(double lat, double lng) {
+		return new GeoPoint((int)(lat * 1E6), (int)(lng * 1E6));
 	}
 }
