@@ -1,9 +1,10 @@
-package com.linnap.routereplay.oldrecording;
+package com.linnap.routereplay.capture;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Service;
 import android.content.Context;
 import android.location.GpsSatellite;
 import android.location.GpsStatus;
@@ -11,44 +12,93 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
+import com.linnap.routereplay.ApplicationGlobals;
+import com.linnap.routereplay.Beeper;
 import com.linnap.routereplay.Utils;
 
-public class GpsListener implements LocationListener, GpsStatus.Listener {
+public class GpsCaptureHelper implements LocationListener, GpsStatus.Listener {
 
-	public static final String TAG = Utils.TAG;
+	public static final boolean BEEP_ON_GPS = true;
 	public static final long GPS_DELAY_MILLIS = 1000;
 	public static final float GPS_DISTANCE_METERS = 0.0f;
 	
-	private EventSaver saver;
-	private LocationManager locationManager;
-	private WakeLock wakeLock;
+	Handler handler;
+	Service service;
+	ApplicationGlobals app;
+	Beeper beeper;
+	WakeLock partial;
+	LocationManager locationManager;
 	
-	public GpsListener(EventSaver saver, Context context) {
-		this.saver = saver;
-		this.locationManager = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
-		this.wakeLock = ((PowerManager)context.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
-		this.wakeLock.setReferenceCounted(false);
+	public GpsCaptureHelper(Service service) {
+		this.handler = new Handler();
+		this.service = service;
+		this.app = (ApplicationGlobals)service.getApplicationContext();
 	}
 	
-	public void resume() {
-		wakeLock.acquire();
+	public void startListening() {
+		if (this.app.capture == null) {
+			Log.d(Utils.TAG, "Capture is null, not starting listening");
+			return;
+		}
+		
+		// Acquire WakeLock
+		partial = ((PowerManager)service.getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, Utils.TAG);
+		partial.setReferenceCounted(false);
+		partial.acquire();
+		
+		// Start GPS
+		locationManager = (LocationManager)service.getSystemService(Context.LOCATION_SERVICE);
 		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, GPS_DELAY_MILLIS, GPS_DISTANCE_METERS, this);
 		locationManager.addGpsStatusListener(this);
+		
+		// Schedule stop
+		long sleep = this.app.capture.currentPeriodGpsCollectMillis();
+		Log.d(Utils.TAG, "Listening going to sleep for " + sleep);
+		handler.postDelayed(stopListening, sleep);
+		Log.d(Utils.TAG, "Listening going to sleep");
+		app.sleepingCaptureHelper = this;
 	}
 	
-	public void pause() {
-		locationManager.removeUpdates(this);
-		locationManager.removeGpsStatusListener(this);
-		wakeLock.release();
+	public Runnable stopListening = new Runnable() {
+		public void run() {			
+			app.sleepingCaptureHelper = null;
+			handler.removeCallbacks(this);
+			Log.d(Utils.TAG, "Listening woke up");
+			
+			// Stop GPS
+			locationManager.removeUpdates(GpsCaptureHelper.this);
+			locationManager.removeGpsStatusListener(GpsCaptureHelper.this);
+			
+			// Stop Service
+			service.stopSelf();
+			
+			// Schedule next steps
+			app.advanceCaptureAndScheduleNextWakeup();
+			
+			// Release WakeLock
+			partial.release();		
+			Log.d(Utils.TAG, "Stopping listening");
+		}
+	};
+	
+	public void maybeBeep() {
+		if (BEEP_ON_GPS) {
+			if (beeper == null)
+				beeper = new Beeper(service);
+			beeper.beep();
+		}
 	}
-		
+
 	@Override
 	public void onLocationChanged(Location location) {
-		if (location != null) {
+		Log.d(Utils.TAG, "Got location " + location);
+		if (location != null && app.capture != null) {
 			JSONObject json = new JSONObject();
 			try {
 				json.put("latitude", location.getLatitude());
@@ -61,12 +111,13 @@ public class GpsListener implements LocationListener, GpsStatus.Listener {
 				if (location.hasSpeed()) json.put("speed", location.getSpeed());
 				json.put("extras", Utils.bundleJson(location.getExtras())); // Omitted if extras == null
 			} catch (JSONException e) {
-				Log.e(TAG, "JSONException", e);
+				Log.e(Utils.TAG, "JSONException", e);
 			}
-			saver.addEvent("location_changed", json);
+			app.capture.saver.addEvent("location_changed", json);
 		} else {
-			saver.addEvent("location_changed", null);
+			app.capture.saver.addEvent("location_changed", null);
 		}
+		maybeBeep();
 	}
 
 	@Override
@@ -86,6 +137,7 @@ public class GpsListener implements LocationListener, GpsStatus.Listener {
 
 	@Override
 	public void onGpsStatusChanged(int event) {
+		Log.d(Utils.TAG, "Got gps status " + event);
 		JSONObject json = new JSONObject();
 		try {
 			switch (event) {
@@ -97,7 +149,6 @@ public class GpsListener implements LocationListener, GpsStatus.Listener {
 			}
 			GpsStatus status = locationManager.getGpsStatus(null);
 			if (status != null) {
-				// TODO: this is only a summary. Add full GPS satellite data!
 				JSONObject statj = new JSONObject();
 				statj.put("timetofirstfix", status.getTimeToFirstFix());				
 				JSONArray birds = new JSONArray();				
@@ -116,9 +167,9 @@ public class GpsListener implements LocationListener, GpsStatus.Listener {
 				json.put("gpsstatus", statj);
 			}
 		} catch (JSONException e) {
-			Log.e(TAG, "JSONException", e);
+			Log.e(Utils.TAG, "JSONException", e);
 		}
-		saver.addEvent("gpsstatus_changed", json);
+		if (app.capture != null)
+			app.capture.saver.addEvent("gpsstatus_changed", json);
 	}
-
 }

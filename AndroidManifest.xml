@@ -5,8 +5,8 @@
       android:versionName="1.0">
     <uses-sdk android:minSdkVersion="8" />
 
-    <application android:icon="@drawable/icon" android:label="RouteReplay">
-        <activity android:name=".ChooseReplayActivity" android:label="RouteReplay">
+    <application android:name=".ApplicationGlobals" android:icon="@drawable/icon" android:label="RouteReplay" android:persistent="true">
+        <activity android:name=".ChooseReplayActivity" android:label="RouteReplay" android:finishOnTaskLaunch="true" android:clearTaskOnLaunch="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -15,14 +15,17 @@
         
         <activity android:name=".ReplayInfoActivity" android:label="Replay Info" />
         <activity android:name=".ReplayMapMovementActivity" android:label="GPS Trace Replay" />
+        <activity android:name=".ScheduledCaptureActivity" android:label="Scheduled Capture" />
         
-        <receiver android:name=".oldrecording.AlarmReceiver"></receiver>
+        <service android:name=".capture.GpsCaptureService" />
+        <receiver android:name=".capture.AlarmReceiver" />
         
         <uses-library android:name="com.google.android.maps" />
     </application>
     
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 </manifest>

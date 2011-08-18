@@ -11,12 +11,15 @@ import android.content.Context;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
+import android.telephony.TelephonyManager;
 
 import com.google.android.maps.GeoPoint;
 
 public class Utils {
 	
 	public static final String TAG = "RouteReplay";
+	
+	public static final long INVALID_FUTURE_TIME = 100L*365*24*3600*1000; // 100 years. Guaranteed to be in the future from 1970.
 	
 	public static final File DATA_DIR = new File("/sdcard/replays");
 	
@@ -76,5 +79,9 @@ public class Utils {
 	
 	public static GeoPoint geopoint(double lat, double lng) {
 		return new GeoPoint((int)(lat * 1E6), (int)(lng * 1E6));
+	}
+	
+	public static String phoneId(Context context) {
+		return ((TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE)).getDeviceId();
 	}
 }

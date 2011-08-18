@@ -29,9 +29,9 @@ public class ReplayMapMovementActivity extends MapActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.mapmovement);
 		
-		replay = ChooseReplayActivity.getReplay();
+		replay = ((ApplicationGlobals)getApplicationContext()).loadedReplay;
 		handler = new Handler();
-		startClockMillis = 0;		
+		startClockMillis = Utils.INVALID_FUTURE_TIME;	
 		
 		mainMapView = (MapView)findViewById(R.id.mapview);
 		mainMapView.setBuiltInZoomControls(true);
@@ -44,13 +44,17 @@ public class ReplayMapMovementActivity extends MapActivity {
 		mainMapView.getOverlays().add(new ExpectedPathOverlay(replay));
 		expectedPosition = new ExpectedPositionOverlay();
 		mainMapView.getOverlays().add(expectedPosition);
+		mainMapView.invalidate();
 	}
 
 	Runnable updateTiming = new Runnable() {
 		public void run() {
+			Log.d(Utils.TAG, "Running update for movement map");
 			long millis = millisSinceStart();
-			if (millis == 0)
+			if (millis == Utils.INVALID_FUTURE_TIME) {
+				Log.d(Utils.TAG, "Update millis invalid, not actually updating. StartClock " + startClockMillis);
 				return;
+			}
 			
 			expectedPosition.updateFix(findNextFix());
 			((TextView)findViewById(R.id.replay_progress)).setText(Utils.formatDeltaMillisAsTime(millis) + " / " + Utils.formatDeltaMillisAsTime(replay.durationMillis()));
@@ -63,23 +67,23 @@ public class ReplayMapMovementActivity extends MapActivity {
 	};
 
 	long millisSinceStart() {
-		if (startClockMillis == 0)
-			return 0;
+		if (startClockMillis == Utils.INVALID_FUTURE_TIME)
+			return Utils.INVALID_FUTURE_TIME;
 		else
 			return SystemClock.elapsedRealtime() - startClockMillis;
 	}
 	
 
 	Fix findNextFix() {
-		if (startClockMillis == 0)
+		if (startClockMillis == Utils.INVALID_FUTURE_TIME)
 			return null;
 		
 		long searchStart = SystemClock.elapsedRealtime();
 		int count = 0;
 		try {
-			long firstFixOffset = replay.fullgps.get(0).offset;
+			long startOffset = replay.startOffset();
 			for (Fix f : replay.fullgps) {
-				if (f.offset - firstFixOffset >= millisSinceStart()) {
+				if (f.offset - startOffset >= millisSinceStart()) {
 					// This is the first fix at or after current time.
 					return f;
 				}
@@ -99,7 +103,7 @@ public class ReplayMapMovementActivity extends MapActivity {
 		myLocation.enableMyLocation();
 		
 		expectedPosition.updateFix(null);
-		if (startClockMillis == 0)
+		if (startClockMillis == Utils.INVALID_FUTURE_TIME)
 			startClockMillis = SystemClock.elapsedRealtime();		
 		updateTiming.run();
 	}

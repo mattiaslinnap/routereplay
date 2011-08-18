@@ -1,8 +1,10 @@
-package com.linnap.routereplay.oldrecording;
+package com.linnap.routereplay.capture;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 
 import org.json.JSONException;
@@ -14,19 +16,16 @@ import com.linnap.routereplay.Utils;
 
 public class EventSaver {
 
-	private static final String TAG = Utils.TAG;
-	
-	private String prefix;
+	private String replayName;
 	private String phoneId;
 	private String filename;
 	private FileOutputStream file;	
 	
-	public EventSaver(String prefix, String phoneId) throws FileNotFoundException {
-		this.prefix = prefix;
+	public EventSaver(String replayName, String phoneId) throws FileNotFoundException {
+		this.replayName = replayName;
 		this.phoneId = phoneId;
-		
-		new File("/sdcard/routereplay").mkdirs();
-		this.filename = "/sdcard/routereplay/" + prefix + "_" + phoneId + "_" + Utils.currentTimestampString();
+				
+		this.filename = new File(new File(Utils.DATA_DIR, replayName), "events_" + phoneId + "_" + Utils.currentTimestampString()).toString();
 		this.file = new FileOutputStream(this.filename);
 	}	
 
@@ -34,7 +33,7 @@ public class EventSaver {
 		try {
 			file.close();
 		} catch (IOException e) {
-			Log.e(TAG, "Error closing file " + this.filename + ": " + e, e);
+			Log.e(Utils.TAG, "Error closing file " + this.filename + ": " + e, e);
 		}
 		file = null;
 	}
@@ -57,12 +56,12 @@ public class EventSaver {
 				file.write(bytes);
 				file.flush();
 			} else {
-				Log.e(TAG, "File " + this.filename + " is already closed.");
+				Log.e(Utils.TAG, "File " + this.filename + " is already closed.");
 			}
 		} catch (JSONException e) {
-			Log.e(TAG, "Error creating full JSON object. extras is of type " + extras.getClass().getName() + ". " + e, e);
+			Log.e(Utils.TAG, "Error creating full JSON object. extras is of type " + extras.getClass().getName() + ". " + e, e);
 		} catch (IOException e) {
-			Log.e(TAG, "Error writing to file " + this.filename + ": " + e, e);
+			Log.e(Utils.TAG, "Error writing to file " + this.filename + ": " + e, e);
 		}
 	}
 }

@@ -16,11 +16,19 @@ public class Replay {
 	public List<List<Long>> schedule;
 	
 	public long durationMillis() {
-		return fullgps.get(fullgps.size() - 1).offset - fullgps.get(0).offset;
+		return endOffset() - startOffset();
+	}
+	
+	public long startOffset() {
+		return Math.min(fullgps.get(0).offset, schedule.get(0).get(0));
 	}
 	
 	public long startMillis() {
-		return epoch + fullgps.get(0).offset;
+		return epoch + startOffset();
+	}
+	
+	public long endOffset() {
+		return Math.max(fullgps.get(fullgps.size() - 1).offset, schedule.get(schedule.size() - 1).get(1));
 	}
 	
 	public Pair<GeoPoint, GeoPoint> getBounds() {

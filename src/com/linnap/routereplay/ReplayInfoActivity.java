@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -23,20 +24,23 @@ public class ReplayInfoActivity extends Activity {
         attachUiEvents();
 	}
 
-	protected void onResume() {
-		super.onResume();		
+	public void onResume() {
+		super.onResume();
 		updateCurrentTime.run();
+		((ApplicationGlobals)getApplicationContext()).killCapture();
+		Log.d(Utils.TAG, "ReplayInfo resuming");
 	}
 	
-	protected void onPause() {
-		super.onPause();		
+	public void onPause() {
+		super.onPause();
 		handler.removeCallbacks(updateCurrentTime);
+		Log.d(Utils.TAG, "ReplayInfo pausing");
 	}
-
+	
 	private void attachUiEvents() {
-		Replay r = ChooseReplayActivity.getReplay();
+		Replay r = ((ApplicationGlobals)getApplicationContext()).loadedReplay;
 		if (r == null) {
-			Toast.makeText(this, "ERROR: replay is null", Toast.LENGTH_LONG).show();
+			Toast.makeText(this, "ERROR: replay is null", Toast.LENGTH_LONG).show();			
 		}
 		((TextView)findViewById(R.id.replay_name)).setText(r.name);
 		((TextView)findViewById(R.id.replay_length)).setText(Utils.formatDeltaMillisAsTime(r.durationMillis()));
@@ -50,7 +54,8 @@ public class ReplayInfoActivity extends Activity {
 		});
 		((Button)findViewById(R.id.start_schedule)).setOnClickListener(new OnClickListener() {
 			public void onClick(View view) {
-				Toast.makeText(ReplayInfoActivity.this, "TODO", Toast.LENGTH_SHORT).show();
+				Intent intent = new Intent(ReplayInfoActivity.this, ScheduledCaptureActivity.class);
+				startActivity(intent);
 			}
 		});
 	}
