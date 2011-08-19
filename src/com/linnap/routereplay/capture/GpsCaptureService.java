@@ -12,7 +12,8 @@ public class GpsCaptureService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.w(Utils.TAG, "Service started");
 		GpsCaptureHelper helper = new GpsCaptureHelper(this);
-		helper.startListening();	
+		helper.startListening();
+		ProcessKiller.killUselessBackgroundServices(this);
 		return START_NOT_STICKY;
 	}
 	

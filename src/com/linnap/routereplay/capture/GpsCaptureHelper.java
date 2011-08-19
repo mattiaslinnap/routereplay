@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.os.SystemClock;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
@@ -34,6 +35,8 @@ public class GpsCaptureHelper implements LocationListener, GpsStatus.Listener {
 	Beeper beeper;
 	WakeLock partial;
 	LocationManager locationManager;
+	volatile boolean locationReceived;
+	volatile long extraSleepStart = Utils.INVALID_FUTURE_TIME;
 	
 	public GpsCaptureHelper(Service service) {
 		this.handler = new Handler();
@@ -65,25 +68,48 @@ public class GpsCaptureHelper implements LocationListener, GpsStatus.Listener {
 		app.sleepingCaptureHelper = this;
 	}
 	
+	public void waitUntilLocationReceived() {
+	}
+	
 	public Runnable stopListening = new Runnable() {
-		public void run() {			
-			app.sleepingCaptureHelper = null;
-			handler.removeCallbacks(this);
-			Log.d(Utils.TAG, "Listening woke up");
-			
-			// Stop GPS
-			locationManager.removeUpdates(GpsCaptureHelper.this);
-			locationManager.removeGpsStatusListener(GpsCaptureHelper.this);
-			
-			// Stop Service
-			service.stopSelf();
-			
-			// Schedule next steps
-			app.advanceCaptureAndScheduleNextWakeup();
-			
-			// Release WakeLock
-			partial.release();		
-			Log.d(Utils.TAG, "Stopping listening");
+		public void run() {
+			if (!locationReceived && app.capture != null) {
+				extraSleepStart = SystemClock.elapsedRealtime();
+				handler.postDelayed(this, 100);
+				return;
+			} else {
+				if (extraSleepStart != Utils.INVALID_FUTURE_TIME) {
+					long extraSleep = SystemClock.elapsedRealtime() - extraSleepStart;
+					Log.w(Utils.TAG, "Extra sleep for " + extraSleep);
+					if (app.capture != null) {
+						JSONObject json = new JSONObject();
+						try {
+							json.put("extra_delay", extraSleep);
+						} catch (JSONException e) {
+							Log.e(Utils.TAG, "JSONException", e);
+						}
+						app.capture.saver.addEvent("schedule_missed", json);
+					}
+				}
+				
+				app.sleepingCaptureHelper = null;
+				handler.removeCallbacks(this);
+				Log.d(Utils.TAG, "Listening woke up");
+				
+				// Stop GPS
+				locationManager.removeUpdates(GpsCaptureHelper.this);
+				locationManager.removeGpsStatusListener(GpsCaptureHelper.this);
+				
+				// Stop Service
+				service.stopSelf();
+				
+				// Schedule next steps
+				app.advanceCaptureAndScheduleNextWakeup();
+				
+				// Release WakeLock
+				partial.release();		
+				Log.d(Utils.TAG, "Stopping listening");
+			}
 		}
 	};
 	
@@ -117,6 +143,7 @@ public class GpsCaptureHelper implements LocationListener, GpsStatus.Listener {
 		} else {
 			app.capture.saver.addEvent("location_changed", null);
 		}
+		locationReceived = true;
 		maybeBeep();
 	}
 
