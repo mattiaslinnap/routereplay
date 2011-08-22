@@ -1,8 +1,11 @@
 package com.linnap.routereplay;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
 import android.os.SystemClock;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.util.Pair;
 import android.widget.TextView;
@@ -20,6 +23,7 @@ public class ReplayMapMovementActivity extends MapActivity {
 	Handler handler;
 	long startClockMillis;
 	
+	WakeLock wakeLock;
 	MapView mainMapView;
 	MyLocationOverlay myLocation;
 	ExpectedPositionOverlay expectedPosition;
@@ -28,6 +32,9 @@ public class ReplayMapMovementActivity extends MapActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.mapmovement);
+		
+		wakeLock = ((PowerManager)getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, Utils.TAG);
+		wakeLock.setReferenceCounted(false);
 		
 		replay = ((ApplicationGlobals)getApplicationContext()).loadedReplay;
 		handler = new Handler();
@@ -100,6 +107,9 @@ public class ReplayMapMovementActivity extends MapActivity {
 	
 	public void onResume() {
 		super.onResume();
+		
+		wakeLock.acquire();
+		
 		myLocation.enableMyLocation();
 		
 		expectedPosition.updateFix(null);
@@ -110,6 +120,9 @@ public class ReplayMapMovementActivity extends MapActivity {
 	
 	public void onPause() {
 		super.onPause();
+		
+		wakeLock.release();
+		
 		handler.removeCallbacks(updateTiming);
 		expectedPosition.updateFix(null);
 		myLocation.disableMyLocation();

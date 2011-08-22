@@ -39,7 +39,7 @@ class ExpectedPositionOverlay extends Overlay {
 		
 		Paint paint = new Paint();
 		paint.setColor(Color.GREEN);
-        paint.setStrokeWidth(2.0f);
+        paint.setStrokeWidth(8.0f);
         
         canvas.drawLine(point.x - CROSS_PIXELS, point.y - CROSS_PIXELS, point.x + CROSS_PIXELS, point.y + CROSS_PIXELS, paint);
         canvas.drawLine(point.x + CROSS_PIXELS, point.y - CROSS_PIXELS, point.x - CROSS_PIXELS, point.y + CROSS_PIXELS, paint);
