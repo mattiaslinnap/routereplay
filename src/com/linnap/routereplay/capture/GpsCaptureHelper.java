@@ -25,7 +25,6 @@ import com.linnap.routereplay.Utils;
 
 public class GpsCaptureHelper implements LocationListener, GpsStatus.Listener {
 
-	public static final boolean BEEP_ON_GPS = true;
 	public static final long GPS_DELAY_MILLIS = 1000;
 	public static final float GPS_DISTANCE_METERS = 0.0f;
 	
@@ -35,8 +34,11 @@ public class GpsCaptureHelper implements LocationListener, GpsStatus.Listener {
 	Beeper beeper;
 	WakeLock partial;
 	LocationManager locationManager;
+	long gpsStartTime = Utils.INVALID_FUTURE_TIME;
+	long sleep = Utils.INVALID_FUTURE_TIME;
 	volatile boolean locationReceived;
-	volatile long extraSleepStart = Utils.INVALID_FUTURE_TIME;
+	volatile boolean hadToDelay;
+	volatile long firstFixTime = Utils.INVALID_FUTURE_TIME;
 	
 	public GpsCaptureHelper(Service service) {
 		this.handler = new Handler();
@@ -55,50 +57,60 @@ public class GpsCaptureHelper implements LocationListener, GpsStatus.Listener {
 		partial.setReferenceCounted(false);
 		partial.acquire();
 		
+		gpsStartTime = SystemClock.elapsedRealtime();
+		locationReceived = false;
+		hadToDelay = false;
+		firstFixTime = Utils.INVALID_FUTURE_TIME;
+		
+		app.capture.saver.addEvent("schedule_start", null);
+		
 		// Start GPS
 		locationManager = (LocationManager)service.getSystemService(Context.LOCATION_SERVICE);
 		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, GPS_DELAY_MILLIS, GPS_DISTANCE_METERS, this);
-		locationManager.addGpsStatusListener(this);
+		//locationManager.addGpsStatusListener(this);
 		
 		// Schedule stop
-		long sleep = this.app.capture.currentPeriodGpsCollectMillis();
+		sleep = this.app.capture.currentPeriodGpsCollectMillis();
 		Log.d(Utils.TAG, "Listening going to sleep for " + sleep);
 		handler.postDelayed(stopListening, sleep);
 		Log.d(Utils.TAG, "Listening going to sleep");
 		app.sleepingCaptureHelper = this;
 	}
 	
-	public void waitUntilLocationReceived() {
-	}
-	
 	public Runnable stopListening = new Runnable() {
 		public void run() {
+			Log.d(Utils.TAG, "Listening woke up");
+			
 			if (!locationReceived && app.capture != null) {
-				extraSleepStart = SystemClock.elapsedRealtime();
+				hadToDelay = true;
 				handler.postDelayed(this, 100);
 				return;
 			} else {
-				if (extraSleepStart != Utils.INVALID_FUTURE_TIME) {
-					long extraSleep = SystemClock.elapsedRealtime() - extraSleepStart;
-					Log.w(Utils.TAG, "Extra sleep for " + extraSleep);
-					if (app.capture != null) {
-						JSONObject json = new JSONObject();
-						try {
-							json.put("extra_delay", extraSleep);
-						} catch (JSONException e) {
-							Log.e(Utils.TAG, "JSONException", e);
-						}
-						app.capture.saver.addEvent("schedule_missed", json);
+				if (hadToDelay) {
+					long ttff = firstFixTime - gpsStartTime;
+					Log.w(Utils.TAG, "Expected TTFF was " + sleep + ", but actual " + ttff);
+					
+					JSONObject json = new JSONObject();
+					try {
+						json.put("expected_ttff", sleep);
+						json.put("actual_ttff", ttff);
+					} catch (JSONException e) {
+						Log.e(Utils.TAG, "JSONException", e);
 					}
+					
+					if (app.capture != null)
+						app.capture.saver.addEvent("schedule_missed", json);
+				} else {
+					if (app.capture != null)
+						app.capture.saver.addEvent("schedule_ok", null);
 				}
 				
 				app.sleepingCaptureHelper = null;
 				handler.removeCallbacks(this);
-				Log.d(Utils.TAG, "Listening woke up");
 				
 				// Stop GPS
 				locationManager.removeUpdates(GpsCaptureHelper.this);
-				locationManager.removeGpsStatusListener(GpsCaptureHelper.this);
+				//locationManager.removeGpsStatusListener(GpsCaptureHelper.this);
 				
 				// Stop Service
 				service.stopSelf();
@@ -114,7 +126,7 @@ public class GpsCaptureHelper implements LocationListener, GpsStatus.Listener {
 	};
 	
 	public void maybeBeep() {
-		if (BEEP_ON_GPS) {
+		if (app.beep_on_gps) {
 			if (beeper == null)
 				beeper = new Beeper(service);
 			beeper.beep();
@@ -124,6 +136,10 @@ public class GpsCaptureHelper implements LocationListener, GpsStatus.Listener {
 	@Override
 	public void onLocationChanged(Location location) {
 		Log.d(Utils.TAG, "Got location " + location);
+		
+		if (firstFixTime == Utils.INVALID_FUTURE_TIME)
+			firstFixTime = SystemClock.elapsedRealtime();
+		
 		if (location != null && app.capture != null) {
 			JSONObject json = new JSONObject();
 			try {
@@ -143,6 +159,7 @@ public class GpsCaptureHelper implements LocationListener, GpsStatus.Listener {
 		} else {
 			app.capture.saver.addEvent("location_changed", null);
 		}
+		
 		locationReceived = true;
 		maybeBeep();
 	}

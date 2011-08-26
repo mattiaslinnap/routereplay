@@ -2,37 +2,47 @@ package com.linnap.routereplay;
 
 import java.io.FileNotFoundException;
 
-import com.linnap.routereplay.capture.CaptureProgress;
-
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.widget.TextView;
+
+import com.linnap.routereplay.capture.CaptureProgress;
 
 public class ScheduledCaptureActivity extends Activity {
 
 	private Handler handler;
+	private WakeLock wakeLock;
 	
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.scheduledcapture);
         
         this.handler = new Handler();
+        wakeLock = ((PowerManager)getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, Utils.TAG);
+        wakeLock.setReferenceCounted(false);
+        wakeLock.acquire();
         
         ApplicationGlobals app = (ApplicationGlobals)getApplicationContext();
         if (app.capture != null) {
         	Log.e(Utils.TAG, "Capture already exists");
         } else {
-        	try {
+        	try {        		
         		Log.i(Utils.TAG, "New capture");
     			app.initializeCapture();
+    			Utils.sleepLogInterrupt(10000);
+    			app.insertPulse();
     			app.advanceCaptureAndScheduleNextWakeup();
     			((TextView)findViewById(R.id.capture_status)).setText("Experiment started...");
     		} catch (FileNotFoundException e) {
     			Log.e(Utils.TAG, "" + e);
     		}
         }
+        wakeLock.release();
     }
 	
 	public void onResume() {

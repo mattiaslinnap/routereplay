@@ -16,5 +16,7 @@
 		<Button android:id="@+id/start_replay" android:text="Replay GPS Trace" android:layout_width="wrap_content" android:layout_height="wrap_content" />
 		<Button android:id="@+id/start_schedule" android:text="Capture Schedule" android:layout_width="wrap_content" android:layout_height="wrap_content" />	
 	</LinearLayout>
+	
+	<CheckBox android:id="@+id/check_beep_on_gps" android:text="Beep on GPS" android:layout_marginTop="50dp" android:layout_width="wrap_content" android:layout_height="wrap_content" />
 
 </LinearLayout>

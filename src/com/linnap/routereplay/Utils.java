@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
 import com.google.android.maps.GeoPoint;
 
@@ -83,5 +84,13 @@ public class Utils {
 	
 	public static String phoneId(Context context) {
 		return ((TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE)).getDeviceId();
+	}
+	
+	public static void sleepLogInterrupt(long millis) {
+		try {
+			Thread.sleep(millis);
+		} catch (InterruptedException e) {
+			Log.e(TAG, "Sleep of " + millis + " millis interrupted!", e);
+		}
 	}
 }

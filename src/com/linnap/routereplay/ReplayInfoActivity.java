@@ -8,8 +8,11 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 
 import com.linnap.routereplay.replay.Replay;
 
@@ -38,7 +41,8 @@ public class ReplayInfoActivity extends Activity {
 	}
 	
 	private void attachUiEvents() {
-		Replay r = ((ApplicationGlobals)getApplicationContext()).loadedReplay;
+		final ApplicationGlobals app = (ApplicationGlobals)getApplicationContext(); 
+		Replay r = app.loadedReplay;
 		if (r == null) {
 			Toast.makeText(this, "ERROR: replay is null", Toast.LENGTH_LONG).show();			
 		}
@@ -47,7 +51,7 @@ public class ReplayInfoActivity extends Activity {
 		((TextView)findViewById(R.id.replay_original_start)).setText("Original start: " + Utils.timestampFriendlyString(r.startMillis()));
 		
 		((Button)findViewById(R.id.start_replay)).setOnClickListener(new OnClickListener() {
-			public void onClick(View view) {
+			public void onClick(View view) {				
 				Intent intent = new Intent(ReplayInfoActivity.this, ReplayMapMovementActivity.class);
 				startActivity(intent);
 			}
@@ -56,6 +60,12 @@ public class ReplayInfoActivity extends Activity {
 			public void onClick(View view) {
 				Intent intent = new Intent(ReplayInfoActivity.this, ScheduledCaptureActivity.class);
 				startActivity(intent);
+			}
+		});
+		
+		((CheckBox)findViewById(R.id.check_beep_on_gps)).setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			public void onCheckedChanged(CompoundButton view, boolean checked) {
+				app.beep_on_gps = checked;
 			}
 		});
 	}

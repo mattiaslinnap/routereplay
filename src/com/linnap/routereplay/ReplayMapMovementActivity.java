@@ -36,6 +36,8 @@ public class ReplayMapMovementActivity extends MapActivity {
 		wakeLock = ((PowerManager)getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, Utils.TAG);
 		wakeLock.setReferenceCounted(false);
 		
+		Utils.sleepLogInterrupt(10000);
+		
 		replay = ((ApplicationGlobals)getApplicationContext()).loadedReplay;
 		handler = new Handler();
 		startClockMillis = Utils.INVALID_FUTURE_TIME;	
