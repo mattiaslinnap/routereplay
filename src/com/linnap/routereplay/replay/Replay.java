@@ -13,6 +13,7 @@ public class Replay {
 	public transient String name;
 	public long epoch;
 	public List<Fix> fullgps;
+	public List<Fix> expected;
 	public List<List<Long>> schedule;
 	
 	public long durationMillis() {

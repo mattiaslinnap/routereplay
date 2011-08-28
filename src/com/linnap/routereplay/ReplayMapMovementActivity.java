@@ -1,5 +1,7 @@
 package com.linnap.routereplay;
 
+import java.util.List;
+
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -28,6 +30,7 @@ public class ReplayMapMovementActivity extends MapActivity {
 	MyLocationOverlay myLocation;
 	ExpectedPositionOverlay expectedPosition;
 
+	public static final long PERIOD_ACTIVE_NOW = -1;
 	
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -35,9 +38,7 @@ public class ReplayMapMovementActivity extends MapActivity {
 		
 		wakeLock = ((PowerManager)getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, Utils.TAG);
 		wakeLock.setReferenceCounted(false);
-		
-		Utils.sleepLogInterrupt(10000);
-		
+				
 		replay = ((ApplicationGlobals)getApplicationContext()).loadedReplay;
 		handler = new Handler();
 		startClockMillis = Utils.INVALID_FUTURE_TIME;	
@@ -67,6 +68,16 @@ public class ReplayMapMovementActivity extends MapActivity {
 			
 			expectedPosition.updateFix(findNextFix());
 			((TextView)findViewById(R.id.replay_progress)).setText(Utils.formatDeltaMillisAsTime(millis) + " / " + Utils.formatDeltaMillisAsTime(replay.durationMillis()));
+			
+			TextView periodInfo = (TextView)findViewById(R.id.replay_time_to_schedule);
+			long toPeriod = millisToNextSchedulePeriod();
+			if (toPeriod == Utils.INVALID_FUTURE_TIME)
+				periodInfo.setText("Unknown");
+			else if (toPeriod == PERIOD_ACTIVE_NOW)
+				periodInfo.setText("NOW! NOW! NOW!");
+			else
+				periodInfo.setText(Utils.formatDeltaMillisAsTime(toPeriod));
+			
 			mainMapView.invalidate();
 			if (millis <= replay.durationMillis())
 				handler.postDelayed(this, 1000);
@@ -88,11 +99,12 @@ public class ReplayMapMovementActivity extends MapActivity {
 			return null;
 		
 		long searchStart = SystemClock.elapsedRealtime();
+		long sinceStart = millisSinceStart();
 		int count = 0;
 		try {
 			long startOffset = replay.startOffset();
 			for (Fix f : replay.fullgps) {
-				if (f.offset - startOffset >= millisSinceStart()) {
+				if (f.offset - startOffset >= sinceStart) {
 					// This is the first fix at or after current time.
 					return f;
 				}
@@ -104,6 +116,29 @@ public class ReplayMapMovementActivity extends MapActivity {
 			//Log.d(Utils.TAG, "Using fix number " + count + " of " + replay.fullgps.size());
 			//Log.d(Utils.TAG, "Next fix search took " + (SystemClock.elapsedRealtime() - searchStart) + " millis.");
 		}
+	}
+	
+	long millisToNextSchedulePeriod() {
+		if (startClockMillis == Utils.INVALID_FUTURE_TIME)
+			return Utils.INVALID_FUTURE_TIME;
+		
+		long sinceStart = millisSinceStart();
+		long startOffset = replay.startOffset();
+		
+		long toNext = Utils.INVALID_FUTURE_TIME;
+		for (List<Long> period : replay.schedule) {
+			long pstart = period.get(0) - startOffset;
+			long pend = period.get(1) - startOffset;
+			
+			if (pstart <= sinceStart && sinceStart <= pend)
+				return PERIOD_ACTIVE_NOW;
+			
+			if (pstart > sinceStart) {
+				toNext = pstart - sinceStart;
+				break;
+			}
+		}
+		return toNext;
 	}
 
 	

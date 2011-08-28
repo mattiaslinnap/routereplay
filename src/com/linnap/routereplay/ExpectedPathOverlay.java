@@ -13,6 +13,8 @@ import com.linnap.routereplay.replay.Fix;
 import com.linnap.routereplay.replay.Replay;
 
 class ExpectedPathOverlay extends Overlay {
+	public static final int EXPECTED_FIX_CROSS_PIXELS = 10;
+	
 	Replay replay;
 	
 	public ExpectedPathOverlay(Replay replay) {
@@ -39,6 +41,19 @@ class ExpectedPathOverlay extends Overlay {
 	        	}
 	        	lastPoint = currentPoint;
 	        }
+	        
+	        paint.setStrokeWidth(2.0f);
+	        for (Fix f : replay.expected) {
+	        	Point point = new Point();
+	        	projection.toPixels(f.geoPoint, point);
+	        	
+	        	drawCross(canvas, point, paint);
+	        }
 		}
+	}
+	
+	public void drawCross(Canvas canvas, Point point, Paint paint) {
+        canvas.drawLine(point.x - EXPECTED_FIX_CROSS_PIXELS, point.y - EXPECTED_FIX_CROSS_PIXELS, point.x + EXPECTED_FIX_CROSS_PIXELS, point.y + EXPECTED_FIX_CROSS_PIXELS, paint);
+        canvas.drawLine(point.x + EXPECTED_FIX_CROSS_PIXELS, point.y - EXPECTED_FIX_CROSS_PIXELS, point.x - EXPECTED_FIX_CROSS_PIXELS, point.y + EXPECTED_FIX_CROSS_PIXELS, paint);
 	}
 }

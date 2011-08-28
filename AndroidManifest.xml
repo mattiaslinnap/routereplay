@@ -16,6 +16,7 @@
         <activity android:name=".ReplayInfoActivity" android:label="Replay Info" />
         <activity android:name=".ReplayMapMovementActivity" android:label="GPS Trace Replay" />
         <activity android:name=".ScheduledCaptureActivity" android:label="Scheduled Capture" />
+        <activity android:name=".SimpleCaptureActivity" android:label="Simple Capture" />
         
         <service android:name=".capture.GpsCaptureService" />
         <receiver android:name=".capture.AlarmReceiver" />

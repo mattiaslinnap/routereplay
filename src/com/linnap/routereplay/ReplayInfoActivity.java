@@ -58,7 +58,7 @@ public class ReplayInfoActivity extends Activity {
 		});
 		((Button)findViewById(R.id.start_schedule)).setOnClickListener(new OnClickListener() {
 			public void onClick(View view) {
-				Intent intent = new Intent(ReplayInfoActivity.this, ScheduledCaptureActivity.class);
+				Intent intent = new Intent(ReplayInfoActivity.this, SimpleCaptureActivity.class);
 				startActivity(intent);
 			}
 		});

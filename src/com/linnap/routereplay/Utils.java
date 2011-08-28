@@ -93,4 +93,12 @@ public class Utils {
 			Log.e(TAG, "Sleep of " + millis + " millis interrupted!", e);
 		}
 	}
+	
+	public static void alarm(Context context) {
+		Beeper beeper = new Beeper(context);
+		for (int i = 0; i < 6; ++i) {
+			beeper.beep();
+			sleepLogInterrupt(300);
+		}
+	}
 }

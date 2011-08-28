@@ -83,5 +83,9 @@ public class Loader {
 		for (Fix f : replay.fullgps) {
 			f.geoPoint = Utils.geopoint(f.lat, f.lng);
 		}
+		
+		for (Fix f : replay.expected) {
+			f.geoPoint = Utils.geopoint(f.lat, f.lng);
+		}
 	}
 }
