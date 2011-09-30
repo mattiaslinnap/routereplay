@@ -5,6 +5,7 @@ import java.util.List;
 
 import android.os.SystemClock;
 
+import com.linnap.routereplay.captureutil.EventSaver;
 import com.linnap.routereplay.replay.Replay;
 
 public class CaptureProgress {

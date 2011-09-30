@@ -6,6 +6,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.linnap.routereplay.Utils;
+import com.linnap.routereplay.captureutil.ProcessKiller;
 
 public class GpsCaptureService extends Service {
 	

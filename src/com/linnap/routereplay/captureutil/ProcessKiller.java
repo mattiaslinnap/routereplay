@@ -1,4 +1,4 @@
-package com.linnap.routereplay.capture;
+package com.linnap.routereplay.captureutil;
 
 import java.util.Arrays;
 import java.util.HashSet;

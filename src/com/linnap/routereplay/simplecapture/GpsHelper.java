@@ -14,7 +14,7 @@ import android.util.Log;
 import com.linnap.routereplay.ApplicationGlobals;
 import com.linnap.routereplay.Beeper;
 import com.linnap.routereplay.Utils;
-import com.linnap.routereplay.capture.EventSaver;
+import com.linnap.routereplay.captureutil.EventSaver;
 
 public class GpsHelper implements LocationListener {
 
