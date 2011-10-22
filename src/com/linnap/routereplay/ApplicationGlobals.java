@@ -25,6 +25,7 @@ public class ApplicationGlobals extends Application {
 	// and be accessible from all threads and contexts.
 	
 	public static final boolean PULSE_CAMERA = true;
+	public static final boolean TIMING_SYNC_BEEP = true;
 	WakeLock wakeLock;
 	
 	public Replay loadedReplay;	

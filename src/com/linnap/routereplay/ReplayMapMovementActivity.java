@@ -147,8 +147,12 @@ public class ReplayMapMovementActivity extends MapActivity {
 		
 		expectedPosition.updateFix(null);
 		if (startClockMillis == Utils.INVALID_FUTURE_TIME)
-			startClockMillis = SystemClock.elapsedRealtime();		
-		updateTiming.run();
+			startClockMillis = SystemClock.elapsedRealtime();
+
+		if (ApplicationGlobals.TIMING_SYNC_BEEP)
+			Utils.alarm(this, 1);
+		
+		updateTiming.run();		
 	}
 	
 	public void onPause() {

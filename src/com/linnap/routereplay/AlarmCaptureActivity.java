@@ -39,6 +39,9 @@ public class AlarmCaptureActivity extends Activity {
 		} finally {		
 			app.getWakelock().release();
 		}
+		
+		if (ApplicationGlobals.TIMING_SYNC_BEEP)
+			Utils.alarm(this, 1);
 	}
 	
 	
