@@ -95,10 +95,15 @@ public class Utils {
 	}
 	
 	public static void alarm(Context context) {
+		alarm(context, 6);
+	}
+	
+	public static void alarm(Context context, int count) {
 		Beeper beeper = new Beeper(context);
-		for (int i = 0; i < 6; ++i) {
+		for (int i = 0; i < count; ++i) {
 			beeper.beep();
-			sleepLogInterrupt(300);
+			if (i + 1 < count)
+				sleepLogInterrupt(300);
 		}
 	}
 }
