@@ -26,7 +26,7 @@ public class Utils {
 	
 	public static SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss.SSS");
 	public static SimpleDateFormat timestampFriendlyFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	
+		
 	// This returns time string in the current Locale, including DST!
 	// android_time is always UTC.
 	public static String timestampString(long android_time) {

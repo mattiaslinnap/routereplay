@@ -47,8 +47,8 @@ public class ChooseReplayActivity extends ListActivity {
 	
 	public void onResume() {
 		super.onResume();
-		((ApplicationGlobals)getApplicationContext()).killCapture();
 		Log.d(Utils.TAG, "ChooseReplay resuming");
+		((ApplicationGlobals)getApplicationContext()).cancelCapture();
 	}
 	
 	public void onPause() {
