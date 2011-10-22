@@ -3,23 +3,24 @@
       package="com.linnap.routereplay"
       android:versionCode="1"
       android:versionName="1.0">
-    <uses-sdk android:minSdkVersion="8" />
+    <uses-sdk android:minSdkVersion="10" />
 
     <application android:name=".ApplicationGlobals" android:icon="@drawable/icon" android:label="RouteReplay" android:persistent="true">
-        <activity android:name=".ChooseReplayActivity" android:label="RouteReplay" android:finishOnTaskLaunch="true" android:clearTaskOnLaunch="true" >
+        <activity android:name=".ChooseReplayActivity" android:label="RouteReplay" android:finishOnTaskLaunch="true" android:clearTaskOnLaunch="true" android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         
-        <activity android:name=".ReplayInfoActivity" android:label="Replay Info" />
-        <activity android:name=".ReplayMapMovementActivity" android:label="GPS Trace Replay" />
-        <activity android:name=".ScheduledCaptureActivity" android:label="Scheduled Capture" />
-        <activity android:name=".SimpleCaptureActivity" android:label="Simple Capture" />
+        <activity android:name=".ReplayInfoActivity" android:label="Replay Info" android:screenOrientation="portrait"/>
+        <activity android:name=".ReplayMapMovementActivity" android:label="GPS Trace Replay" android:screenOrientation="portrait"/>
+        <activity android:name=".ScheduledCaptureActivity" android:label="Scheduled Capture" android:screenOrientation="portrait"/>
+        <activity android:name=".AlarmCaptureActivity" android:label="Alarm Capture" android:screenOrientation="portrait"/>
+        <activity android:name=".SimpleCaptureActivity" android:label="Simple Capture" android:screenOrientation="portrait"/>
         
         <service android:name=".capture.GpsCaptureService" />
-        <receiver android:name=".capture.AlarmReceiver" />
+        <receiver android:name=".alarmcapture.AlarmReceiver" />
         
         <uses-library android:name="com.google.android.maps" />
     </application>

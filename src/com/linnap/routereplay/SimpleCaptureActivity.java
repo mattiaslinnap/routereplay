@@ -14,7 +14,7 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.linnap.routereplay.capture.EventSaver;
+import com.linnap.routereplay.captureutil.EventSaver;
 import com.linnap.routereplay.simplecapture.GpsHelper;
 import com.linnap.routereplay.simplecapture.ScheduleTimerThread;
 

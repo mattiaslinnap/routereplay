@@ -1,6 +1,7 @@
 package com.linnap.routereplay;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 
 import android.app.AlarmManager;
 import android.app.Application;
@@ -9,12 +10,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
+import android.net.Uri;
+import android.os.PowerManager;
 import android.os.SystemClock;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
-import com.linnap.routereplay.capture.AlarmReceiver;
-import com.linnap.routereplay.capture.CaptureProgress;
-import com.linnap.routereplay.capture.GpsCaptureHelper;
+import com.linnap.routereplay.alarmcapture.AlarmReceiver;
+import com.linnap.routereplay.captureutil.EventSaver;
 import com.linnap.routereplay.replay.Replay;
 
 public class ApplicationGlobals extends Application {
@@ -22,82 +25,132 @@ public class ApplicationGlobals extends Application {
 	// and be accessible from all threads and contexts.
 	
 	public static final boolean PULSE_CAMERA = true;
+	WakeLock wakeLock;
 	
-	public Replay loadedReplay;
-	public CaptureProgress capture;
-	private PendingIntent latestPendingWakeup;
-	public GpsCaptureHelper sleepingCaptureHelper;
+	public Replay loadedReplay;	
 	public boolean beep_on_gps;
+	
+	// Active Capture Data
+	public EventSaver captureSaver;
+	public ArrayList<PendingIntent> pendingIntents = new ArrayList<PendingIntent>();
 	
 	public void initializeCapture() throws FileNotFoundException {
 		Log.w(Utils.TAG, "Initing new capture");
-		capture = new CaptureProgress(loadedReplay, Utils.phoneId(this));
-	}
-	
-	public void killCapture() {
-		Log.w(Utils.TAG, "Killing capture in progress");
-		capture = null;
-		if (latestPendingWakeup != null)
-			((AlarmManager)this.getSystemService(Context.ALARM_SERVICE)).cancel(latestPendingWakeup);
-		if (sleepingCaptureHelper != null)
-			sleepingCaptureHelper.stopListening.run();
-	}
-	
-	public void advanceCaptureAndScheduleNextWakeup() {
-		if (capture != null) {
-			++capture.nextScheduleIndex;
-			if (capture.nextScheduleIndex < capture.replay.schedule.size()) {			
-				// There are more scheduled periods. Set Broadcast alarm.
-				long now = SystemClock.elapsedRealtime();
-				long wakeup = capture.nextWakeupElapsedMillis();
-				//Log.d(Utils.TAG, "Now is " + now + ", setting wakeup for " + wakeup + " (" + (wakeup - now) + " millis delay)"); 
-				Intent intent = new Intent(this, AlarmReceiver.class);
-				latestPendingWakeup = PendingIntent.getBroadcast(this, AlarmReceiver.GPS_THREAD_WAKEUP_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-				((AlarmManager)this.getSystemService(Context.ALARM_SERVICE)).set(AlarmManager.ELAPSED_REALTIME_WAKEUP, wakeup, latestPendingWakeup);
-				//Log.d(Utils.TAG, "Alarm set");
-				// TODO: Do not go to sleep if the next wakeup is < 1 second away.
-			} else {
-				Log.d(Utils.TAG, "Experiment finished");
-				capture.saver.addEvent("finished", null);
-				capture.saver.close();
+		
+		if (loadedReplay != null) {
+			if (captureSaver == null) {
+				captureSaver = new EventSaver(loadedReplay.name, Utils.phoneId(this));
 				
-				Beeper beeper = new Beeper(this);
-				try {
-					beeper.beep();
-					Thread.sleep(500);
-					beeper.beep();
-					Thread.sleep(500);
-					beeper.beep();
-					Thread.sleep(500);
-					beeper.beep();
-					Thread.sleep(500);
-					beeper.beep();
-				} catch (InterruptedException e) {
+				insertPulse();
+				
+				captureSaver.addEvent("capture_started", null);
+				
+				long now = SystemClock.elapsedRealtime();
+				
+				for (int i = 0; i < loadedReplay.schedule.size(); ++i) {
+					long delay = loadedReplay.schedule.get(i).get(0) - loadedReplay.startOffset();
+					long captureFor = loadedReplay.schedule.get(i).get(1) - loadedReplay.schedule.get(i).get(0);
+					
+					long wakeup = now + delay;
+					
+					// Schedule GPS
+					scheduleAlarm(AlarmReceiver.ACTION_GPS, wakeup, captureFor, i);
 				}
+				
+				// Finish experiment
+				scheduleAlarm(AlarmReceiver.ACTION_FINISH, now + loadedReplay.endOffset() - loadedReplay.startOffset(), -1, loadedReplay.schedule.size());				
+			} else {
+				Log.e(Utils.TAG, "Cannot INIT capture, a saver already exists");
+				Utils.alarm(this);
 			}
 		} else {
-			Log.d(Utils.TAG, "Cannot advance null capture, must have been killed.");
+			Log.e(Utils.TAG, "Cannot INIT capture, no loaded replay!");
+			Utils.alarm(this);
 		}
 	}
 	
+	public void finishCapture() {		
+		
+		if (captureSaver != null) {
+			Log.w(Utils.TAG, "Finishing capture");
+			captureSaver.addEvent("capture_finished", null);
+			insertPulse();
+			
+			captureSaver.close();
+			captureSaver = null;
+			
+			if (pendingIntents == null) {
+				Log.e(Utils.TAG, "Cannot FINISH capture because pending intents array does not exist!");
+				Utils.alarm(this);
+			} else {
+				pendingIntents.clear();
+			}
+		} else {
+			Log.e(Utils.TAG, "Cannot FINISH capture because saver does not exist");
+			Utils.alarm(this);
+		}
+		Utils.alarm(this);
+	}
+	
+	public void cancelCapture() {
+		if (captureSaver != null) {
+			Log.w(Utils.TAG, "Cancelling capture");
+			captureSaver.addEvent("capture_cancelled", null);
+			captureSaver.close();
+			captureSaver = null;
+			
+			// Remove pending intents.
+			if (pendingIntents != null) {
+				AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+				for (PendingIntent pi : pendingIntents) {
+					Log.w(Utils.TAG, "Cancelled " + pi);
+					alarmManager.cancel(pi);
+				}
+				pendingIntents.clear();
+			} else {
+				Log.e(Utils.TAG, "Cannot CANCEL alarms because pendingintents array does not exist!");
+			}
+		} else {
+			Log.e(Utils.TAG, "Cannot CANCEL capture because saver does not exist");
+		}
+	}
+	
+	void scheduleAlarm(String action, long wakeup, long captureFor, int counter) {
+		AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+		
+		// Using counter as URI, so that intents would not be equal and override each other.
+		String dummyAction = Intent.ACTION_RUN;
+		Uri dummyData = Uri.parse("foo://" + counter);
+		
+		Intent intent = new Intent(dummyAction, dummyData, this, AlarmReceiver.class);
+		intent.putExtra(AlarmReceiver.ACTION_KEY, action);
+		intent.putExtra(AlarmReceiver.EXPECTED_TIME_KEY, wakeup);
+		intent.putExtra(AlarmReceiver.CAPTURE_FOR_KEY, captureFor);
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, AlarmReceiver.GPS_THREAD_WAKEUP_CODE, intent, 0);
+		pendingIntents.add(pendingIntent);
+		alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, wakeup, pendingIntent);
+		Log.d(Utils.TAG, "Alarm set for " + wakeup + ", that is " + (wakeup - SystemClock.elapsedRealtime()) + " from now");
+	}
 	
 	void insertPulse() {
 		if (PULSE_CAMERA) {
 			Camera camera = Camera.open();
 			try {				
-				Thread.sleep(50);
+				Thread.sleep(5000);
 				
-				capture.saver.addEvent("spinstart", null);
+				if (captureSaver != null)
+					captureSaver.addEvent("spinstart", null);
 				Parameters params = camera.getParameters();
 				params.setFlashMode(Parameters.FLASH_MODE_TORCH);			
 				camera.setParameters(params);						
-				Thread.sleep(50);						
+				Thread.sleep(1000);						
 				params = camera.getParameters();
 				params.setFlashMode(Parameters.FLASH_MODE_OFF);			
 				camera.setParameters(params);
-				capture.saver.addEvent("spinend", null);
+				if (captureSaver != null)
+					captureSaver.addEvent("spinend", null);
 				
-				Thread.sleep(50);				
+				Thread.sleep(1000);				
 			} catch (InterruptedException e) {
 				Log.e(Utils.TAG, "Interrupted while inserting pulse");
 			} finally {
@@ -107,5 +160,13 @@ public class ApplicationGlobals extends Application {
 		} else {
 			throw new RuntimeException("CPU spin pulse not implemented");
 		}
+	}
+	
+	WakeLock getWakelock() {
+		if (wakeLock == null) {
+			wakeLock = ((PowerManager)getSystemService(Context.POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, Utils.TAG);
+			wakeLock.setReferenceCounted(true);
+		}
+		return wakeLock;
 	}
 }

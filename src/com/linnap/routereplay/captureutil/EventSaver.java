@@ -1,4 +1,4 @@
-package com.linnap.routereplay.capture;
+package com.linnap.routereplay.captureutil;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -10,9 +10,10 @@ import java.io.IOException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.linnap.routereplay.Utils;
+
 import android.util.Log;
 
-import com.linnap.routereplay.Utils;
 
 public class EventSaver {
 

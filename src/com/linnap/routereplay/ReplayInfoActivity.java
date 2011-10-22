@@ -30,8 +30,8 @@ public class ReplayInfoActivity extends Activity {
 	public void onResume() {
 		super.onResume();
 		updateCurrentTime.run();
-		((ApplicationGlobals)getApplicationContext()).killCapture();
 		Log.d(Utils.TAG, "ReplayInfo resuming");
+		((ApplicationGlobals)getApplicationContext()).cancelCapture();
 	}
 	
 	public void onPause() {
@@ -51,15 +51,34 @@ public class ReplayInfoActivity extends Activity {
 		((TextView)findViewById(R.id.replay_original_start)).setText("Original start: " + Utils.timestampFriendlyString(r.startMillis()));
 		
 		((Button)findViewById(R.id.start_replay)).setOnClickListener(new OnClickListener() {
-			public void onClick(View view) {				
+			public void onClick(View view) {
+				app.getWakelock().acquire();
+				Utils.sleepLogInterrupt(5000);
+				app.insertPulse(); // To sync timing
+				
 				Intent intent = new Intent(ReplayInfoActivity.this, ReplayMapMovementActivity.class);
 				startActivity(intent);
+				app.getWakelock().release();
 			}
 		});
 		((Button)findViewById(R.id.start_schedule)).setOnClickListener(new OnClickListener() {
 			public void onClick(View view) {
+				app.getWakelock().acquire();
+				Utils.sleepLogInterrupt(5000);
+				app.insertPulse(); // To sync timing
+				
 				Intent intent = new Intent(ReplayInfoActivity.this, SimpleCaptureActivity.class);
 				startActivity(intent);
+				app.getWakelock().release();
+			}
+		});
+		((Button)findViewById(R.id.start_schedule_lowpower)).setOnClickListener(new OnClickListener() {
+			public void onClick(View view) {
+				app.getWakelock().acquire();
+				Utils.sleepLogInterrupt(5000);
+				Intent intent = new Intent(ReplayInfoActivity.this, AlarmCaptureActivity.class);
+				startActivity(intent);
+				app.getWakelock().release();
 			}
 		});
 		

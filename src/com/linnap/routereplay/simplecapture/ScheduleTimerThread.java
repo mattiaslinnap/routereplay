@@ -7,7 +7,7 @@ import android.util.Log;
 
 import com.linnap.routereplay.SimpleCaptureActivity;
 import com.linnap.routereplay.Utils;
-import com.linnap.routereplay.capture.EventSaver;
+import com.linnap.routereplay.captureutil.EventSaver;
 import com.linnap.routereplay.replay.Replay;
 
 public class ScheduleTimerThread extends Thread {
